@@ -59,3 +59,21 @@
 4. Выполнить `checks.sql`: каждый запрос откроется в своей вкладке результатов.
 
 Готовая база тоже лежит в репозитории: `sports.db` можно просто открыть в DBeaver.
+
+## Скриншоты из DBeaver
+
+Таблицы базы:
+
+![Таблицы](screenshots/01_tables.jpg)
+
+ER-диаграмма, построенная DBeaver:
+
+![ER-диаграмма](screenshots/02_er_diagram.jpg)
+
+Запрос 1, активные абонементы:
+
+![Активные абонементы](screenshots/03_query_active_memberships.jpg)
+
+Запрос 7, конфликты в расписании:
+
+![Конфликты расписания](screenshots/04_query_schedule_conflicts.jpg)
