@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>ERD sports_club</title>
+<style>
+  body { margin: 0; background: #f6f7fb; font: 14px/1.3 -apple-system, "Helvetica Neue", Arial, sans-serif; color: #1f2937; }
+  #canvas { position: relative; width: 1460px; height: 860px; }
+  h1 { position: absolute; left: 40px; top: 6px; font-size: 22px; margin: 14px 0; }
+  .table { position: absolute; width: 300px; background: #fff; border: 1.5px solid #94a3b8; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 6px rgba(0,0,0,.06); z-index: 1; }
+  .table h2 { margin: 0; padding: 9px 12px; font-size: 15px; background: #1e3a8a; color: #fff; font-family: Menlo, monospace; }
+  .row { display: flex; justify-content: space-between; padding: 5px 12px; border-top: 1px solid #e5e7eb; font-family: Menlo, monospace; font-size: 12.5px; }
+  .row .t { color: #64748b; }
+  .k { display: inline-block; width: 26px; font-size: 10px; font-weight: 700; }
+  .pk { color: #b45309; } .fk { color: #2563eb; }
+  svg { position: absolute; left: 0; top: 0; z-index: 0; }
+  .lbl { font: 700 13px Menlo, monospace; fill: #334155; }
+  .legend { position: absolute; left: 40px; bottom: 20px; color: #475569; font-size: 13px; }
+</style>
+</head>
+<body>
+<div id="canvas">
+  <h1>Спортивный клуб — ER-диаграмма</h1>
+  <svg id="lines" width="1460" height="860"></svg>
+</div>
+<script>
+const T = {
+  membership_types: { x: 40,   y: 70,  cols: [["PK","id","INTEGER"],["","name","TEXT UQ"],["","price","INTEGER"],["","duration_days","INTEGER"]] },
+  memberships:      { x: 400,  y: 70,  cols: [["PK","id","INTEGER"],["FK","member_id","INTEGER"],["FK","membership_type_id","INTEGER"],["","start_date","TEXT"],["","end_date","TEXT"]] },
+  members:          { x: 760,  y: 70,  cols: [["PK","id","INTEGER"],["","first_name","TEXT"],["","last_name","TEXT"],["","email","TEXT UQ"],["","phone","TEXT UQ"],["","birth_date","TEXT"],["","joined_at","TEXT"]] },
+  trainers:         { x: 1120, y: 70,  cols: [["PK","id","INTEGER"],["","first_name","TEXT"],["","last_name","TEXT"],["","email","TEXT UQ"],["","specialization","TEXT"],["","hired_at","TEXT"]] },
+  payments:         { x: 400,  y: 470, cols: [["PK","id","INTEGER"],["FK","membership_id","INTEGER"],["","amount","INTEGER"],["","paid_at","TEXT"],["","method","TEXT"]] },
+  visits:           { x: 760,  y: 470, cols: [["PK","id","INTEGER"],["FK","member_id","INTEGER"],["FK","class_id","INTEGER"],["","status","TEXT"]] },
+  classes:          { x: 1120, y: 470, cols: [["PK","id","INTEGER"],["","title","TEXT"],["FK","trainer_id","INTEGER"],["","room","TEXT"],["","starts_at","TEXT"],["","duration_min","INTEGER"],["","capacity","INTEGER"]] },
+};
+const canvas = document.getElementById("canvas");
+const el = {};
+for (const [name, t] of Object.entries(T)) {
+  const d = document.createElement("div");
+  d.className = "table"; d.style.left = t.x + "px"; d.style.top = t.y + "px";
+  d.innerHTML = `<h2>${name}</h2>` + t.cols.map(([k, c, ty]) =>
+    `<div class="row"><span><span class="k ${k.toLowerCase()}">${k}</span>${c}</span><span class="t">${ty}</span></div>`).join("");
+  canvas.appendChild(d); el[name] = d;
+}
+// [родитель (1), потомок (N), сторона выхода у родителя]
+const rels = [
+  ["membership_types", "memberships", "h"],
+  ["members", "memberships", "h"],
+  ["memberships", "payments", "v"],
+  ["members", "visits", "v"],
+  ["classes", "visits", "h"],
+  ["trainers", "classes", "v"],
+];
+const svg = document.getElementById("lines");
+const box = n => ({ l: el[n].offsetLeft, t: el[n].offsetTop, w: el[n].offsetWidth, h: el[n].offsetHeight });
+const add = (tag, attrs, text) => { const e = document.createElementNS("http://www.w3.org/2000/svg", tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (text) e.textContent = text; svg.appendChild(e); };
+for (const [p, c, dir] of rels) {
+  const a = box(p), b = box(c);
+  let x1, y1, x2, y2;
+  if (dir === "h") {
+    y1 = y2 = Math.min(a.t + a.h, b.t + b.h) / 2 + Math.max(a.t, b.t) / 2;
+    if (a.l < b.l) { x1 = a.l + a.w; x2 = b.l; } else { x1 = a.l; x2 = b.l + b.w; }
+  } else {
+    x1 = x2 = a.l + a.w / 2; y1 = a.t + a.h; y2 = b.t;
+  }
+  add("line", { x1, y1, x2, y2, stroke: "#475569", "stroke-width": 2 });
+  const s = x2 > x1 ? 1 : x2 < x1 ? -1 : 0, v = y2 > y1 ? 1 : 0;
+  add("text", { x: x1 + s * 8 + (v ? 8 : 0) - (s < 0 ? 10 : 0), y: y1 + (v ? 18 : -6), class: "lbl" }, "1");
+  add("text", { x: x2 - s * 18 + (v ? 8 : 0) - (s < 0 ? 0 : 0), y: y2 + (v ? -8 : -6), class: "lbl" }, "N");
+}
+</script>
+<div class="legend" style="position:absolute;left:40px;top:820px;color:#475569;font-size:13px">
+  <b style="color:#b45309">PK</b> первичный ключ · <b style="color:#2563eb">FK</b> внешний ключ · UQ уникальное значение · 1 — N: одна запись связана со многими
+</div>
+</body>
+</html>
